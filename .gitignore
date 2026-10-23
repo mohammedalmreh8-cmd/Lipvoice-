@@ -174,3 +174,29 @@
 *.lz
 *.lzma
 *.iso
+
+# Local environment
+.monkeycode-tmp-files/
+.env
+
+# Thesis and generated documents
+*.docx
+*.pdf
+*.pptx
+LipVoice_*.txt
+Chapter*.txt
+ch3_v*.png
+
+# App build artifacts and unused public dumps
+public/*.docx
+public/*.pdf
+public/*.pptx
+public/*.txt
+public/LipVoice_*
+public/Chapter*
+public/front_preview/
+public/figures_before/
+public/ch4figs/
+public/images_preview.html
+public/figure_preview.html
+public/stageB_hello.wav

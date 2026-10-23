@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="application-name" content="LipVoice" />
+    <meta name="description" content="نظام ذكي لقراءة حركة الشفاه وتحويلها إلى كلام." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="LipVoice" />
+    <meta property="og:title" content="نظام ذكي لقراءة حركة الشفاه" />
+    <meta property="og:description" content="نظام ذكي لقراءة حركة الشفاه وتحويلها إلى كلام." />
+    <meta property="og:image" content="/icons/icon-512.png" />
+    <title>نظام ذكي لقراءة حركة الشفاه</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;700;800&family=Noto+Naskh+Arabic:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #07141c;
+        --slide: #10252e;
+        --ink: #f4efe4;
+        --muted: #b7c4c0;
+        --line: rgba(244, 239, 228, 0.12);
+        --accent: #e8a87c;
+        --teal: #7ec8c0;
+        --good: #8fd9a4;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Noto Naskh Arabic", serif;
+      }
+
+      #deck {
+        height: 100%;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .slide {
+        display: none;
+        height: 100%;
+        padding: 48px 64px 88px;
+        flex-direction: column;
+        justify-content: center;
+        background:
+          radial-gradient(900px 420px at 90% -10%, #234854 0%, transparent 55%),
+          linear-gradient(180deg, #0d1f28, var(--bg));
+      }
+
+      .slide.on {
+        display: flex;
+      }
+
+      .kicker {
+        color: var(--teal);
+        font-family: "Noto Kufi Arabic", sans-serif;
+        font-size: 0.92rem;
+        letter-spacing: 0.04em;
+        margin: 0 0 10px;
+      }
+
+      h1,
+      h2 {
+        font-family: "Noto Kufi Arabic", sans-serif;
+        font-weight: 800;
+        margin: 0 0 18px;
+        line-height: 1.45;
+      }
+
+      h1 {
+        font-size: clamp(1.8rem, 3.4vw, 2.7rem);
+      }
+
+      h2 {
+        font-size: clamp(1.45rem, 2.6vw, 2.1rem);
+      }
+
+      p,
+      li {
+        font-size: clamp(1.02rem, 1.5vw, 1.22rem);
+        line-height: 1.85;
+        color: var(--ink);
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .lead {
+        max-width: 980px;
+        font-size: 1.28rem;
+      }
+
+      ul {
+        margin: 0;
+        padding: 0 22px 0 0;
+      }
+
+      li + li {
+        margin-top: 8px;
+      }
+
+      .meta {
+        display: grid;
+        gap: 6px;
+        margin-top: 28px;
+        color: var(--muted);
+        font-size: 1.02rem;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .grid.two {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .grid.three {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+
+      .card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 18px 20px;
+      }
+
+      .card h3 {
+        font-family: "Noto Kufi Arabic", sans-serif;
+        margin: 0 0 10px;
+        color: var(--accent);
+        font-size: 1.05rem;
+      }
+
+      .card p,
+      .card li {
+        font-size: 1rem;
+        line-height: 1.7;
+        margin: 0;
+      }
+
+      .card ul {
+        padding: 0 18px 0 0;
+      }
+
+      .flow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .pill {
+        background: #16303a;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 10px 16px;
+        font-family: "Noto Kufi Arabic", sans-serif;
+        font-size: 0.98rem;
+      }
+
+      .arrow {
+        color: var(--accent);
+        font-size: 1.4rem;
+      }
+
+      .bar {
+        position: fixed;
+        inset: auto 0 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 28px 18px;
+        background: linear-gradient(180deg, transparent, rgba(7, 20, 28, 0.95));
+        font-family: "Noto Kufi Arabic", sans-serif;
+      }
+
+      .bar button {
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 16px;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .progress {
+        flex: 1;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+
+      .progress span {
+        display: block;
+        height: 100%;
+        width: 3%;
+        background: linear-gradient(90deg, var(--teal), var(--accent));
+      }
+
+      .title-mark {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        margin-bottom: 22px;
+        background: conic-gradient(from 210deg, var(--accent), var(--teal), #d97b6f, var(--accent));
+      }
+
+      .quote {
+        border-right: 4px solid var(--accent);
+        padding: 4px 16px 4px 0;
+        color: var(--accent);
+        font-size: 1.2rem;
+      }
+
+      .note {
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 0.98rem;
+      }
+
+      .en {
+        font-family: "Source Sans 3", "Noto Kufi Arabic", sans-serif;
+        direction: ltr;
+        text-align: left;
+      }
+
+      @media (max-width: 900px) {
+        .slide {
+          padding: 28px 20px 92px;
+          justify-content: flex-start;
+          overflow: auto;
+        }
+
+        .grid.two,
+        .grid.three {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          font-size: 1.55rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="deck">
+      <!-- 1 Title -->
+      <section class="slide on">
+        <div class="title-mark"></div>
+        <p class="kicker">دبلوم تكنولوجيا المعدات الطبية · كلية المجتمع — صنعاء · 2026م</p>
+        <h1>نظام ذكي لقراءة حركة الشفاه المعتمد على الكاميرا</h1>
+        <p class="lead">للتعرف على الكلام الصامت وتحويله إلى نص وصوت</p>
+        <p class="lead muted en">LipVoice — Smart Camera-Based Lip-Reading System for Silent Speech</p>
+        <div class="grid two" style="margin-top: 28px">
+          <div class="card"><h3>إعداد الطالب</h3><p>محمد نجيب مهدي المرح</p></div>
+          <div class="card"><h3>الإشراف</h3><p>أ.د/ وليد محمد الطلبي<br />م/ هنادي علي الحارثي</p></div>
+        </div>
+      </section>
+
+      <!-- 2 Outline -->
+      <section class="slide">
+        <p class="kicker">المحتويات · Outline</p>
+        <h2>هيكل العرض</h2>
+        <div class="grid three">
+          <div class="card"><h3>المقدمة</h3><p>Introduction</p></div>
+          <div class="card"><h3>بيان المشكلة</h3><p>Problem Statement</p></div>
+          <div class="card"><h3>الأهداف</h3><p>Objectives</p></div>
+          <div class="card"><h3>الخلفية العلمية</h3><p>Background</p></div>
+          <div class="card"><h3>الخوارزمية العلمية</h3><p>Scientific Algorithm</p></div>
+          <div class="card"><h3>مراجعة الأدبيات</h3><p>Literature Review</p></div>
+          <div class="card"><h3>أعمالنا</h3><p>Our Works</p></div>
+          <div class="card"><h3>النتائج</h3><p>Results</p></div>
+          <div class="card"><h3>المناقشة</h3><p>Discussion</p></div>
+          <div class="card"><h3>الخاتمة</h3><p>Conclusion</p></div>
+          <div class="card"><h3>العمل المستقبلي</h3><p>Future Work</p></div>
+        </div>
+      </section>
+
+      <!-- 3 Introduction -->
+      <section class="slide">
+        <p class="kicker">المقدمة · Introduction</p>
+        <h2>الكلام حق تواصل… ومن يفقده يحتاج بديلاً عملياً</h2>
+        <ul>
+          <li>الكلام أداة أساسية للتفاعل والتعليم والرعاية الصحية والاستقلالية والمشاركة الاجتماعية.</li>
+          <li>فئة واسعة تفقد القدرة على النطق: بعد استئصال الحنجرة، أو السكتة الدماغية، أو إصابات عصبية أو عضلية، أو أمراض تؤثر على الأحبال الصوتية.</li>
+          <li>يبقى لدى كثير من هؤلاء حركة الشفاه والفك سليمة، لكن لا يخرج منها صوت مسموع يعبر عن مقصدهم.</li>
+          <li>لماذا أعددنا المشروع؟ لأن الحلول الحالية لا تجمع بين اللسان الطبيعي، وبدون حسّاسات ملتصقة، وبدون لغة إشارة يعرفها الطرفان، وبسعر ودّي يعمل على كاميرا عادية.</li>
+          <li>الفكرة: كاميرا تلتقط حركة الشفاه، ونظام ذكي يترجمها إلى نص ثم إلى صوت مسموع للمريض.</li>
+        </ul>
+      </section>
+
+      <!-- 4 Problem statement -->
+      <section class="slide">
+        <p class="kicker">بيان المشكلة · Problem Statement</p>
+        <h2>من يفتقد الصوت لا يجد قناة تواصل فورية وطبيعية</h2>
+        <div class="grid three" style="margin-top: 16px">
+          <div class="card"><h3>الشريحة المستهدفة</h3><p>المرضى غير القادرين على التكلم، ومن فقدوا الصوت مؤقتاً أو دائماً.</p></div>
+          <div class="card"><h3>الحاجة</h3><p>تحويل حركة الشفاه إلى كلام مقروء ومسموع فور حدوثه، دون وسيط بشري.</p></div>
+          <div class="card"><h3>الفجوة</h3><p>لا يوجد حل يومي بسيط، غير تدخلي، يعمل بكاميرا عادية وبصوت المريض نفسه.</p></div>
+        </div>
+        <ul style="margin-top: 18px">
+          <li>البدائل الحالية إمّا بطيئة (الكتابة على لوح)، أو تحتاج طرفاً يعرف لغة الإشارة، أو معدات ملبوسة، أو جهاز حنجرة إلكترونية ينتج صوتاً آلياً.</li>
+          <li>المشكلة البحثية: تصميم نظام ذكي يفسّر الكلام الصامت من حركة الشفاه المرئية ويحوّله إلى نص وصوت، دون أجهزة معقدة أو تدخّل جراحي.</li>
+        </ul>
+      </section>
+
+      <!-- 5 Solution overview -->
+      <section class="slide">
+        <p class="kicker">الحل المقترح · Proposed Solution</p>
+        <h2>المريض يقف أمام الكاميرا فيتحول كلامه الصامت إلى صوت وكتابة</h2>
+        <div class="flow" style="margin: 18px 0 22px">
+          <span class="pill">التقاط الوجه</span>
+          <span class="arrow">←</span>
+          <span class="pill">تحليل الشفاه</span>
+          <span class="arrow">←</span>
+          <span class="pill">مطابقة ذكية</span>
+          <span class="arrow">←</span>
+          <span class="pill">نص + صوت</span>
+          <span class="arrow">←</span>
+          <span class="pill">عرض فوري</span>
+        </div>
+        <ul>
+          <li>الهدف من المشروع: نظام ذكي يقرأ حركة الشفاه عبر التصوير، ثم يترجمها إلى صوت وكلام وكتابة تلقائياً.</li>
+          <li>النظام يعمل في الوقت الحقيقي (Real-Time): يبدأ عند بدء الكلام الصامت وينتهي عند السكوت.</li>
+          <li>المخرجات الثلاثة: نص مكتوب على الشاشة، وصوت مسموع، وسجل محادثة جاهز للنسخ.</li>
+          <li>الاستفادة: يمنح المريض صوتاً يفهمه من حوله دون أن يتكلم فعلياً، بصوت يشبه صوته القديم.</li>
+        </ul>
+      </section>
+
+      <!-- 6 General objective -->
+      <section class="slide">
+        <p class="kicker">الأهداف · Objectives</p>
+        <h2>الهدف العام</h2>
+        <div class="card" style="margin-top: 10px">
+          <h3>General Objective</h3>
+          <p>تصميم وتنفيذ نظام ذكي يعتمد على الرؤية الحاسوبية والذكاء الاصطناعي، يقرأ حركة الشفاه عبر كاميرا عادية، ويحوّل الكلام الصامت إلى نص مكتوب وصوت مسموع بصوت المريض نفسه، ليمنح فاقدي النطق قناة تواصل فورية وطبيعية وغير تدخلية.</p>
+        </div>
+        <p class="note en">Deliver a real-time, camera-based silent-speech interface that speaks for the patient.</p>
+      </section>
+
+      <!-- 7 Specific objectives -->
+      <section class="slide">
+        <p class="kicker">الأهداف · Objectives</p>
+        <h2>الأهداف الخاصة</h2>
+        <div class="grid two">
+          <div class="card">
+            <ul>
+              <li>بناء مسار رؤية حاسوبية يكتشف الوجه ويحدد معالم الشفاه بدقة.</li>
+              <li>استخراج خصائص ديناميكية تصف شكل الفم وسرعته وتسارعه وترتيب حركته.</li>
+              <li>كشف بداية الكلام الصامت ونهايته تلقائياً دون لمس أي زر.</li>
+              <li>تطوير آلية مطابقة تربط الحركة الحية بعبارات المريض المدربة.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <ul>
+              <li>تمكين أي مريض من تدريب عباراته اليومية الخاصة، وبعدد غير محدود.</li>
+              <li>تحويل النص المتوقع إلى صوت شرطي مبني على تسجيل قديم لصوت المريض.</li>
+              <li>توفير واجهة تعمل على الجوال والتابلت والكمبيوتر وفي وضع عدم الاتصال.</li>
+              <li>تقييم الأداء واستقرار النظام في الوقت الحقيقي وتقليل التنبؤات الخاطئة.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8 Background 1 -->
+      <section class="slide">
+        <p class="kicker">الخلفية العلمية · Background</p>
+        <h2>الكلام الصامت: من الصوت إلى الرؤية</h2>
+        <div class="grid two">
+          <div class="card">
+            <h3>Silent Speech Interface</h3>
+            <p>استنتاج الكلام المقصود دون إشارة صوتية مسموعة، اعتماداً على حركة الشفاه والوجه كإشارة مرئية بديلة.</p>
+          </div>
+          <div class="card">
+            <h3>Computer Vision</h3>
+            <p>تحويل إطارات الكاميرا إلى إحداثيات رقمية لمعالم الوجه (Face Landmarks)، ثم تتبع الفم عبر الأزمنة.</p>
+          </div>
+          <div class="card">
+            <h3>Lip Dynamics</h3>
+            <p>شكل الفم، مدى الانفتاح، العرض ونسبة الأبعاد، السرعة، التسارع، ونقاط تغيّر الاتجاه — هي ما يميز العبارة.</p>
+          </div>
+          <div class="card">
+            <h3>Temporal Matching</h3>
+            <p>معنى العبارة يعتمد على تتابع الحركة زمنياً، لذلك تُقارن التسلسلات لا اللحظات المفردة.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9 Background 2 - why camera -->
+      <section class="slide">
+        <p class="kicker">الخلفية العلمية · Background</p>
+        <h2>لماذا الكاميرا؟ مقارنة قنوات الالتقاط</h2>
+        <div class="grid three">
+          <div class="card"><h3>الميكروفون — غير مناسب</h3><p>يفشل تماماً مع فاقدي الصوت لأن الإشارة الصوتية غائبة.</p></div>
+          <div class="card"><h3>الحساسات الملبوسة — تدخلية</h3><p>تحتاج ملامسة الجلد ومعايرة وصيانة، وقد تسبب تهيّجاً.</p></div>
+          <div class="card"><h3>الكاميرا العادية — الأنسب</h3><p>غير تدخلية، متوفرة على كل جهاز، وتلتقط حركة الشفاه مباشرة.</p></div>
+        </div>
+      </section>
+
+      <!-- 10 Algorithm pipeline -->
+      <section class="slide">
+        <p class="kicker">الخوارزمية العلمية · Scientific Algorithm</p>
+        <h2>خط الأنابيب الكامل: من الفوتون إلى الصوت</h2>
+        <div class="flow" style="margin: 8px 0 18px">
+          <span class="pill">Camera</span>
+          <span class="arrow">←</span>
+          <span class="pill">Landmarks</span>
+          <span class="arrow">←</span>
+          <span class="pill">Features</span>
+          <span class="arrow">←</span>
+          <span class="pill">Motion</span>
+          <span class="arrow">←</span>
+          <span class="pill">Matching</span>
+          <span class="arrow">←</span>
+          <span class="pill en">NLP→TTS</span>
+        </div>
+        <ul>
+          <li>1. الالتقاط: كاميرا الويب ٩٦٠×٧٢٠ أمام المريض، والإطارات تصل بمعدل ٣٠ إطاراً في الثانية.</li>
+          <li>2. المعالم: نموذج MediaPipe Face Landmarker يستخرج ٤٧٨ نقطة ثلاثية الأبعاد + Blendshapes للفم.</li>
+          <li>3. الخصائص: تُشتق ١٨ خاصية هندسية وحركية معيارية مستقلة عن حجم الوجه وبُعده عن الكاميرا.</li>
+          <li>4. الديناميكية: يُحسب متجه السرعة والتسارع لكل خاصية، فيصبح التمثيل ٥٤ قناة زمنية.</li>
+          <li>5. المطابقة: قياس تشابه زمني بين التسلسل الحي والعبارات المدربة (Dynamic Time Warping).</li>
+          <li>6. النطق: تحويل النص المتوقع إلى وحدات صوتية ثم توليد صوت بصوت المريض المرجعي.</li>
+        </ul>
+      </section>
+
+      <!-- 11 Feature extraction -->
+      <section class="slide">
+        <p class="kicker">الخوارزمية العلمية · Scientific Algorithm</p>
+        <h2>كيف تقرأ الكاميرا حركة الشفاه؟</h2>
+        <div class="grid three">
+          <div class="card"><h3>معالجة الفيديو</h3><p>كل إطار يُحوَّل إلى مصفوفة معالم؛ الأبعاد الثلاثة (x, y, z) تُقرأ نسبياً لمعالم ثابتة كالوجنتين.</p></div>
+          <div class="card"><h3>خصائص الشكل</h3><p>انفتاح الفم، النسبة بين الارتفاع والعرض، انضمام الشفاه، الابتسام، الاستدارة، والقمع.</p></div>
+          <div class="card"><h3>خصائص الحركة</h3><p>سرعة تغيّر كل خاصية وتسارعها بين الإطارات، لإبراز إيقاع النطق لا الوضع الساكن فقط.</p></div>
+        </div>
+        <div class="grid two" style="margin-top: 16px">
+          <div class="card"><h3>التطبيع الهندسي</h3><p>المسافات تُقسم على عرض الوجه، فيصبح النظام مستقلاً عن قرب الشخص أو حجم الشاشة أو دقة الكاميرا.</p></div>
+          <div class="card"><h3>بوابة الكلام</h3><p>كاشف حركة يمنع التنبؤ أثناء السكون أو الرمش أو التنفس، ولا يُطلق القراءة إلا عند نطق حقيقي.</p></div>
+        </div>
+      </section>
+
+      <!-- 12 Matching -->
+      <section class="slide">
+        <p class="kicker">الخوارزمية العلمية · Scientific Algorithm</p>
+        <h2>آلية المطابقة والتنبؤ</h2>
+        <ul>
+          <li>توحيد الطول: كل تسجيل يُعاد أخذ عيّناته إلى تمثيل زمني ثابت (٢٨ إطاراً) ليتساوى القصير والطويل.</li>
+          <li>Dynamic Time Warping: يحاذي التسلسل الحي مع المدرب حتى لو اختلف إيقاع النطق بينهما.</li>
+          <li>تمثيل الفونيمات (Visemes): تُوصف حركة الفم بوحدات مرئية تقارب مخارج الحروف، وتُقارن بتشابه ضبابي.</li>
+          <li>مطابقة الديناميكية: تُقارن السرعة والتسارع وعدد نقاط الاتجاه لتفرّق بين عبارتين متشابهتي الشكل.</li>
+          <li>ترجيح الزاوية: لكل تسجيل بصمة زاوية الرأس (أمامي/يمين/يسار/أقرب/أبعد) فتُرجَّح المطابقة الأقرب وضعيةً.</li>
+          <li>درجة الثقة: تُحسب من المسافة النهائية وتُعرض مع بدائل مرشحة ليتأكد المريض إن أخطأ النظام.</li>
+        </ul>
+      </section>
+
+      <!-- 13 Voice synthesis -->
+      <section class="slide">
+        <p class="kicker">الخوارزمية العلمية · Scientific Algorithm</p>
+        <h2>كيف تتحول الحركة إلى كلام بصوت المريض؟</h2>
+        <div class="grid two">
+          <div class="card"><h3>1. تحليل النص</h3><p>النص المتوقع يُقطَّع إلى وحدات صوتية (Phonemes) حسب اللغة، ولكل وحدة مدة ومخرج نطقي.</p></div>
+          <div class="card"><h3>2. الصوت المرجعي</h3><p>يرفع المريض تسجيلاً قديماً لصوته، أو يسجّل عيّنة، فيُخزَّن على الجهاز فقط.</p></div>
+          <div class="card"><h3>3. التلوين الصوتي</h3><p>يُستخرج من المرجع: التردد الأساسي (Pitch)، درجة اللمعان، والظرف الطيفي، لتشكيل شخصية الصوت.</p></div>
+          <div class="card"><h3>4. التوليد الشرطي</h3><p>يُبنى كلام جديد للجملة المتوقعة بصوت شبيه بصوت المريض — لا إعادة لنفس التسجيل ولا صوت روبوتي.</p></div>
+        </div>
+      </section>
+
+      <!-- 14 Literature review 1 -->
+      <section class="slide">
+        <p class="kicker">مراجعة الأدبيات · Literature Review</p>
+        <h2>الأنظمة القائمة على الحنجرة الإلكترونية</h2>
+        <div class="grid two">
+          <div class="card"><h3>المبدأ</h3><p>اهتزاز ميكانيكي خارجي تُشكّله أعضاء النطق لإنتاج كلام مسموع بعد فقدان الحنجرة.</p></div>
+          <div class="card"><h3>المزايا</h3><p>تنتج صوتاً مسموعاً، وتدعم التواصل المباشر، وقد تناسب حالات استئصال الحنجرة.</p></div>
+        </div>
+        <ul style="margin-top: 18px">
+          <li>القيود: تحتاج جهازاً مخصصاً يُمسك باليد، وصوتها آلي أو روبوتي، وتعتمد نتيجتها على موضع الجهاز وراحة المريض.</li>
+          <li>الفرق في مشروعنا: لا جهاز إضافي، ولا صوت آلي — الكاميرا فقط، وصوت قريب من صوت المريض.</li>
+        </ul>
+      </section>
+
+      <!-- 15 Literature review 2 -->
+      <section class="slide">
+        <p class="kicker">مراجعة الأدبيات · Literature Review</p>
+        <h2>الأنظمة القائمة على الحساسات الملبوسة</h2>
+        <div class="grid two">
+          <div class="card"><h3>المبدأ</h3><p>حساسات على الرقبة أو الحلق تلتقط نشاط العضلات أو الإشارات الفسيولوجية أثناء النطق الصامت، ثم يصنّفها تعلّم الآلة.</p></div>
+          <div class="card"><h3>المزايا</h3><p>لا تعتمد على الصوت المسموع، وقد تعمل في الصمت التام، وتقدّم قياسات فسيولوجية دقيقة.</p></div>
+        </div>
+        <ul style="margin-top: 18px">
+          <li>القيود: تلامس الجلد، معايرة مستمرة، تكلفة وتعقيد، تهيّج عند الاستخدام الطويل، وتفاوت جودة الإشارة بين المستخدمين.</li>
+          <li>الفرق في مشروعنا: لا شيء يُلبس أو يُلصق — إشارة بصرية بحتة، واستخدام فوري بلا معايرة.</li>
+        </ul>
+      </section>
+
+      <!-- 16 Literature review 3 -->
+      <section class="slide">
+        <p class="kicker">مراجعة الأدبيات · Literature Review</p>
+        <h2>قراءة الشفاه بالذكاء الاصطناعي عبر الكاميرا</h2>
+        <div class="grid two">
+          <div class="card"><h3>المبدأ</h3><p>الكاميرا تلتقط الوجه، وتُستخرج معالم الشفاه، وتُحلَّل الخصائص الزمنية بنموذج لتعلم أنماط الكلام المرئية.</p></div>
+          <div class="card"><h3>المزايا</h3><p>غير تدخلية، بلا استخدام اليدين، بلا أجهزة ملبوسة، وتعتمد كاميرات متوفرة على كل جهاز تقريباً.</p></div>
+        </div>
+        <ul style="margin-top: 18px">
+          <li>القيود في الأدبيات: التأثر بالإضاءة واتجاه الوجه والمسافة، والحاجة إلى بيانات تدريب كافية، وضعف الأداء عند تغيير المستخدم.</li>
+          <li>مساهمتنا: نظام يعمل على GPU/CPU عادي داخل المتصفح، ويتأقلم مع المستخدم بالتدريب المخصص، وبدون معالجة سحابية.</li>
+        </ul>
+      </section>
+
+      <!-- 17 Research gap -->
+      <section class="slide">
+        <p class="kicker">الفجوة البحثية · Research Gap</p>
+        <h2>بين الأنظمة المعقدة والحل اليومي البسيط</h2>
+        <p class="lead">أثبت الأدبيات إمكانية استرجاع الكلام بإشارات ميكانيكية أو فسيولوجية أو بصرية، لكن الفجوة تبقى في حلٍّ عملي، منخفض التكلفة، غير تدخلي، يعمل بكاميرا عادية، وفي الوقت الحقيقي، ويؤدي كلاماً بصوت المريض نفسه دون أجهزة ملبوسة أو أجهزة مخصصة.</p>
+        <p class="quote">مشروع LipVoice يعالج هذه الفجوة بدمج تتبع الشفاه بالكاميرا، وهندسة الخصائص الديناميكية، والمطابقة الزمنية، وتوليد الصوت الشرطي — كل ذلك داخل المتصفح.</p>
+      </section>
+
+      <!-- 18 Our works - overview -->
+      <section class="slide">
+        <p class="kicker">أعمالنا · Our Works</p>
+        <h2>ما الذي بنيناه فعلياً؟</h2>
+        <ul>
+          <li>نظام كامل يعمل داخل المتصفح (Web App) بلا تثبيت مسبق، ويمكن تثبيته كتطبيق مستقل (Progressive Web App).</li>
+          <li>مسار بصرية حية: يلتقط الوجه، يحدد الشفاه، يحسب الخصائص والديناميكية، ثم يطابقها مع عبارات المريض المدربة.</li>
+          <li>تدريب مفتوح: المريض يضيف عباراته اليومية بنفسه وبعدد غير محدود، ومن زوايا ومسافات متعددة.</li>
+          <li>مخرجات فورية: نص على الشاشة، وصوت مسموع، وسجل محادثة قابل للنسخ.</li>
+          <li>استرجاع الصوت: يمكن رفع تسجيل قديم لصوت المريض ليُستخدم كمرجع لإنتاج الكلام الجديد.</li>
+          <li>يعمل باللغتين العربية والإنجليزية بقاموسين وصوتين منفصلين تماماً.</li>
+        </ul>
+      </section>
+
+      <!-- 19 Our works - capture/tracking -->
+      <section class="slide">
+        <p class="kicker">أعمالنا · Our Works</p>
+        <h2>من الكاميرا إلى الخصائص</h2>
+        <div class="grid three">
+          <div class="card"><h3>التقاط مباشر</h3><p>الكاميرا تعمل مباشرة عند فتح الصفحة، دون أزرار تشغيل، وبإطار مريح للوجه.</p></div>
+          <div class="card"><h3>تتبع المعالم</h3><p>MediaPipe Face Landmarker يحدد ٤٧٨ نقطة للوجه ويرسم محيط الشفاه فوق الفيديو.</p></div>
+          <div class="card"><h3>جودة الوجه</h3><p>تحقق فوري من وضوح الوجه والشفاه والمسافة، مع رسائل إرشادية إن كان المريض بعيداً أو مائلاً.</p></div>
+        </div>
+        <div class="grid two" style="margin-top: 16px">
+          <div class="card"><h3>استخراج الخصائص</h3><p>١٨ خاصية معيارية (شكل + حركة) + السرعة والتسارع، لتكوين بصمة رقمية لطريقة نطق المريض.</p></div>
+          <div class="card"><h3>كشف الصوت الصامت</h3><p>خوارزمية عتبة طاقة الحركة تُعلن بداية الكلام ونهايته، فتقرأ النظام دون تدخل من المريض.</p></div>
+        </div>
+      </section>
+
+      <!-- 20 Our works - training -->
+      <section class="slide">
+        <p class="kicker">أعمالنا · Our Works</p>
+        <h2>تدريب مخصص: عبارات غير محدودة، وأي مريض</h2>
+        <div class="grid two">
+          <div class="card">
+            <ul>
+              <li>لا يقتصر النظام على عدد ثابت من العبارات أو العيّنات — أي مريض يمكنه تدريب أي عدد من عباراته.</li>
+              <li>يدرّب المريض من زوايا ومسافات متعددة (Front / Left / Right / Near / Far) لاكتساب متانة أمام حركة الرأس.</li>
+              <li>لكل عبارة عدة لقطات، واللقطات القوية تزيد وزن العبارة عند المطابقة.</li>
+              <li>دليل النطق المرئي: يوضّح للمستخدم كيف تتحرك الشفاه عند العبارة خطوةً بخطوة قبل التسجيل.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <ul>
+              <li>الحفظ أولاً: إذا بدأ المستخدم تسجيل عبارة جديدة، تُحفظ اللقطة السابقة ولا تُرفض أو تُلغى.</li>
+              <li>كشف الالتباس: إن تشابهت لقطة ما مع عبارة أخرى يعرض النظام سبب الالتباس ويقترح زاوية أو إيقاعاً أوضح.</li>
+              <li>مؤشر قوة العبارة: يبيّن مدى جاهزية العبارة (بدأ / يتعلم / مدرب) ونسبة الإنجاز.</li>
+              <li>واجهة عربية وإنجليزية منفصلتان: عبارات كل لغة مستقلة تماماً عن الأخرى.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 21 Our works - real-time recognition -->
+      <section class="slide">
+        <p class="kicker">أعمالنا · Our Works</p>
+        <h2>القراءة الحية وتقليل الأخطاء</h2>
+        <div class="grid two">
+          <div class="card"><h3>قراءة مستمرة</h3><p>يقارن النظام الحركة الحية مع العبارات المدربة أثناء الكلام، ويعرض أفضل تطابق لحظياً.</p></div>
+          <div class="card"><h3>إغلاق تلقائي</h3><p>تُقفل القراءة النهائية عند السكوت أو عند استقرار مطابقة حية، ثم تُنطق العبارة تلقائياً.</p></div>
+          <div class="card"><h3>بدائل مرشحة</h3><p>عند الالتباس تُعرض عدة عبارات مرشحة بدرجات ثقة، ليختار المريض الصحيحة بلمسة.</p></div>
+          <div class="card"><h3>فترة تهدئة</h3><p>مهلة قصيرة بعد كل تنبؤ تمنع إعادة القراءة المتكررة لنفس الحركة وتقلل الضجيج.</p></div>
+        </div>
+      </section>
+
+      <!-- 22 Our works - voice -->
+      <section class="slide">
+        <p class="kicker">أعمالنا · Our Works</p>
+        <h2>قسم «صوتي»: استرجاع صوت المريض</h2>
+        <ul>
+          <li>يرفع المريض تسجيلاً قديماً لصوته (WAV / MP3 / M4A / OGG) أو يسجّل عيّنة مباشرة من الميكروفون.</li>
+          <li>يُخزَّن التسجيل محلياً على جهاز المريض فقط، داخل قاعدة بيانات المتصفح (IndexedDB) — لا يُرفع لأي سيرفر.</li>
+          <li>يُحلّل التسجيل لاستخراج: التردد الأساسي للصوت، درجة اللمعان، وطابعه الطيفي، لتكوين «بصمة الصوت».</li>
+          <li>تُبنى الكلمة أو العبارة المتوقعة ككلام جديد بهذه البصمة — لا إعادة للتسجيل نفسه ولا صوت آلي.</li>
+          <li>إمكانية التمييز بين التسجيل المرجعي (Reference) والكلام المولَّد (Generated) واضحة في التصميم.</li>
+          <li>اختبار مسبق: مربع نص للتجربة ينطق أي جملة تكتبها بصوت المريض قبل الاعتماد على التوقعات.</li>
+        </ul>
+      </section>
+
+      <!-- 23 Our works - platform -->
+      <section class="slide">
+        <p class="kicker">أعمالنا · Our Works</p>
+        <h2>مزايا المنصة والخصوصية</h2>
+        <div class="grid three">
+          <div class="card"><h3>تثبيت كتطبيق</h3><p>يعمل على الجوال والتابلت والكمبيوتر (Windows) ويُثبَّت كتطبيق مستقل بأيقونة خاصة.</p></div>
+          <div class="card"><h3>يعمل دون اتصال</h3><p>بعد التحميل الأول يعمل جزئياً دون شبكة، ومحرك الرؤية يعمل على الجهاز نفسه.</p></div>
+          <div class="card"><h3>خصوصية كاملة</h3><p>لا معالجة سحابية: الفيديو والصوت لا يغادران جهاز المريض، وهو مطلب أساسي سريرياً.</p></div>
+        </div>
+        <div class="grid two" style="margin-top: 16px">
+          <div class="card"><h3>سجل المحادثة</h3><p>كل عبارة مقروءة تُسجَّل زمنياً، مع إمكانية النسخ وحذف السجل، لمراجعة ما قاله المريض.</p></div>
+          <div class="card"><h3>عبارات الأساس</h3><p>حزمة عبارات جاهزة (نعم، لا، ماء، مساعدة، ألم…) لبدء الاستخدام فوراً قبل التدريب المخصص.</p></div>
+        </div>
+      </section>
+
+      <!-- 24 Results -->
+      <section class="slide">
+        <p class="kicker">النتائج · Results</p>
+        <h2>ما الذي أثبته النظام فعلياً؟</h2>
+        <ul>
+          <li>قراءة حية ناجحة: النظام يميّز بين عبارات المريض المدربة من حركة الشفاه وحدها أثناء الاستخدام المباشر.</li>
+          <li>استقرار عند السكون: لم تُطلق قراءات خاطئة أثناء الصمت أو حركات الوجه العرضية، بفضل بوابة الكلام.</li>
+          <li>دعم تعدّد الزوايا: ظلّت المطابقة قادرة على التعرّف عند تغيّر اتجاه الرأس ومسافته عن الكاميرا.</li>
+          <li>مخرجات مترابطة: نص + صوت + سجل، وكلها تعمل معاً في دورة واحدة تبدأ تلقائياً عند بدء الكلام.</li>
+          <li>مرونة تشغيل: العمل محلياً على المعالج دون GPU، وزمن الاستجابة داخل نافذة التفاعل الطبيعي.</li>
+          <li>قابلية التثبيت: أُثبّت التطبيق واشتُغل على الجوال والتابلت والكمبيوتر دون إعدادات خاصة.</li>
+        </ul>
+      </section>
+
+      <!-- 25 Discussion 1 -->
+      <section class="slide">
+        <p class="kicker">المناقشة · Discussion</p>
+        <h2>تحقيق الأهداف وتحليل الأداء</h2>
+        <div class="grid two">
+          <div class="card"><h3>هل تحققت الأهداف؟</h3><p>نعم: صُمّم النظام ونُفّذ وعمل فعلياً، وقرأ الشفاه وحوّلها إلى نص وصوت، بمخرجات ثلاث مطابقة للهدف العام.</p></div>
+          <div class="card"><h3>لماذا نجح؟</h3><p>التكامل: تتبّع دقيق للمعالم + خصائص ديناميكية + مطابقة زمنية + بوابة كلام، لا مجرد شبكة واحدة.</p></div>
+          <div class="card"><h3>التحديات والحلول</h3><p>الإضاءة واتجاه الوجه → تطبيع هندسي وترجيح الزاوية. تشابه العبارات → ديناميكية ومطابقة DTW.</p></div>
+          <div class="card"><h3>المقارنة</h3><p>مقابل الحنجرة الإلكترونية والحساسات الملبوسة: بلا جهاز، بلا التصاق بالجسم، وبصوت المريض لا صوت آلي.</p></div>
+        </div>
+      </section>
+
+      <!-- 26 Discussion 2 -->
+      <section class="slide">
+        <p class="kicker">المناقشة · Discussion</p>
+        <h2>المصدر من الفائدة والحل العلمي</h2>
+        <ul>
+          <li>الفائدة للمريض: يستعيد قناة تواصل فورية بلسانه الطبيعي، دون أن يتعلم لغة جديدة أو يحمل جهازاً.</li>
+          <li>الفائدة للمحيط: من حول المريض يسمع كلاماً مسموعاً ويقرأ نصاً واضحاً دون تدريب مسبق منهم.</li>
+          <li>الحل العلمي: تحويل الكلام الصامت المرئي إلى نص وصوت بصوت المتحدث — وهو ما يعالج فجوة حقيقية.</li>
+          <li>الحدود الحالية بصدق: التعرّف الحالي مرتبط بالمفردات التي دُرّب عليها المريض، وليس قراءة شفاه عامة مفتوحة.</li>
+          <li>التوسّع الأفقي: يمكن لأي مريض إضافة عباراته، فيتوسّع النظام ذاتياً بلا إعادة بناء.</li>
+        </ul>
+      </section>
+
+      <!-- 27 Conclusion -->
+      <section class="slide">
+        <p class="kicker">الخاتمة · Conclusion</p>
+        <h2>صُمّم النظام… ونُفّذ… وعمل</h2>
+        <ul>
+          <li>تم تصميم نظام LipVoice وتنفيذه كتطبيق حقيقي يعمل، لا مجرد تصميم نظري أو نموذج على ورق.</li>
+          <li>أثبت النظام أنه يقرأ حركة الشفاه من كاميرا عادية ويحوّلها إلى نص وصوت بشكل متكامل وفي الوقت الحقيقي.</li>
+          <li>من أبرز مزاياه: العمل على أي جهاز بلا تثبيت إلزامي، والدعم الكامل للعربية والإنجليزية، والخصوصية المطلقة.</li>
+          <li>قدّم النظام حلّاً عملياً لفاقدي الصوت بأن يجعل الشفاه تتكلم، وبصوت قريب من صوت المريض نفسه.</li>
+          <li>النتيجة: الكاميرا العادية أصبحت وسيلة تعبير مسموعة لمن لا يستطيع الكلام، دون أجهزة أو تدخّل جراحي.</li>
+        </ul>
+      </section>
+
+      <!-- 28 Future work -->
+      <section class="slide">
+        <p class="kicker">العمل المستقبلي · Future Work</p>
+        <h2>من نموذج عامل إلى نظام أوسع وأذكى</h2>
+        <div class="grid two">
+          <div class="card">
+            <ul>
+              <li>توسيع المفردات إلى جمل وسياق محادثة طبيعي أكثر، لا عبارات مفردة فقط.</li>
+              <li>دمج نموذج لغوي تنبؤي (Language Model) لفهم السياق وتصحيح التوقع تلقائياً.</li>
+              <li>نماذج صوتية عصبية متقدمة (Neural TTS) لاستنساخ صوت أقرب وأكثر عاطفة.</li>
+              <li>تشغيل كامل دون شبكة (Offline-first) مع نماذج على الجهاز.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <ul>
+              <li>جمع بيانات أكبر من مستخدمين حقيقيين وتقييم سريري مع مرضى اضطرابات النطق.</li>
+              <li>دعم لغات ومحليّات إضافية (لهجات عربية متعددة).</li>
+              <li>تحسين المتانة أمام الإضاءة والمسافة وزوايا الرأس المختلفة.</li>
+              <li>دراسة نماذج أكثر تقدماً (Transformers / Attention) لقراءة الشفاه المفتوحة.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 29 Thanks -->
+      <section class="slide" style="align-items: center; text-align: center">
+        <h1 style="color: var(--accent)">شكراً لكم</h1>
+        <p class="lead">نظام ذكي لقراءة حركة الشفاه المعتمد على الكاميرا</p>
+        <p class="muted">محمد نجيب مهدي المرح — دبلوم تكنولوجيا المعدات الطبية — كلية المجتمع · صنعاء · 2026</p>
+        <p class="en" style="color: var(--teal)">LipVoice</p>
+      </section>
+    </div>
+
+    <div class="bar">
+      <button type="button" id="prev">السابق</button>
+      <div class="progress"><span id="prog"></span></div>
+      <span id="count">1 / 1</span>
+      <button type="button" id="next">التالي</button>
+    </div>
+
+    <script>
+      const slides = [...document.querySelectorAll(".slide")];
+      const count = document.getElementById("count");
+      const prog = document.getElementById("prog");
+      let i = 0;
+
+      function show(n) {
+        i = Math.max(0, Math.min(slides.length - 1, n));
+        slides.forEach((s, k) => s.classList.toggle("on", k === i));
+        count.textContent = i + 1 + " / " + slides.length;
+        prog.style.width = ((i + 1) / slides.length) * 100 + "%";
+      }
+
+      document.getElementById("prev").addEventListener("click", () => show(i - 1));
+      document.getElementById("next").addEventListener("click", () => show(i + 1));
+      document.addEventListener("keydown", (e) => {
+        if (["ArrowLeft", "ArrowRight", " ", "PageDown", "PageUp", "Home", "End"].includes(e.key)) e.preventDefault();
+        if (e.key === "ArrowLeft" || e.key === " " || e.key === "PageDown") show(i + 1);
+        if (e.key === "ArrowRight" || e.key === "PageUp") show(i - 1);
+        if (e.key === "Home") show(0);
+        if (e.key === "End") show(slides.length - 1);
+      });
+      let touchX = null;
+      document.addEventListener("touchstart", (e) => {
+        touchX = e.changedTouches[0].screenX;
+      });
+      document.addEventListener("touchend", (e) => {
+        if (touchX == null) return;
+        const dx = e.changedTouches[0].screenX - touchX;
+        if (dx > 50) show(i + 1);
+        if (dx < -50) show(i - 1);
+        touchX = null;
+      });
+      show(0);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f1c24" />
+    <meta name="application-name" content="LipVoice" />
+    <meta name="description" content="Camera lip-reading app that speaks your trained phrases aloud." />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="LipVoice" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="LipVoice" />
+    <meta property="og:title" content="LipVoice — Speak with your lips" />
+    <meta property="og:description" content="Camera lip-reading app that speaks your trained phrases aloud." />
+    <meta property="og:image" content="/icons/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="LipVoice" />
+    <meta name="twitter:description" content="Camera lip-reading app that speaks your trained phrases aloud." />
+    <meta name="twitter:image" content="/icons/icon-512.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="msapplication-TileColor" content="#0f1c24" />
+    <meta name="msapplication-TileImage" content="/icons/icon-192.png" />
+    <title>LipVoice — Speak with your lips</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Noto+Naskh+Arabic:wght@500;700&family=Source+Sans+3:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+    <script>
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");
+    </script>
+  </head>
+  <body>
+    <div id="install-sheet" class="install-sheet" role="status">
+      <img class="install-icon" src="/icons/icon-192.png" alt="" width="48" height="48" />
+      <div class="install-copy">
+        <strong id="install-title">Install LipVoice</strong>
+        <p id="install-hint">Add LipVoice to this device. This stays until you install.</p>
+      </div>
+      <button type="button" id="btn-install-banner" class="primary">Install</button>
+    </div>
+    <div id="app">
+      <header class="topbar">
+        <div class="brand">
+          <img class="brand-mark" src="/icons/icon-192.png" alt="" width="42" height="42" />
+          <div>
+            <h1>LipVoice</h1>
+            <p id="brand-sub">It reads your lips through the camera, then speaks for you.</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <div class="lang-switch" role="group" aria-label="Language">
+            <button type="button" id="lang-en" class="lang-btn active">EN</button>
+            <button type="button" id="lang-ar" class="lang-btn">ع</button>
+          </div>
+          <button type="button" id="btn-install" class="primary">Install</button>
+          <button type="button" id="btn-cloud" class="ghost">Sign in</button>
+          <button type="button" id="btn-voice-panel" class="ghost">My voice</button>
+          <button type="button" id="btn-settings" class="ghost">Settings</button>
+          <button type="button" id="btn-train" class="ghost">Train phrases</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="stage">
+          <div class="video-wrap">
+            <video id="camera" playsinline muted autoplay></video>
+            <canvas id="overlay"></canvas>
+            <div id="face-badge" class="badge">Looking for your face</div>
+            <div id="mouth-meter" class="mouth-meter" aria-hidden="true">
+              <span></span>
+            </div>
+          </div>
+          <div class="status-row">
+            <span id="status-dot" class="dot idle"></span>
+            <p id="status-text">Allow camera access to begin</p>
+          </div>
+        </section>
+
+        <section class="speech-panel">
+          <p class="kicker" id="kicker">What we think you said</p>
+          <div id="prediction" class="prediction" aria-live="polite">
+            Mouth a word, then pause.
+          </div>
+          <p id="confidence" class="confidence"></p>
+          <p id="viseme-strip" class="viseme-strip" aria-hidden="true"></p>
+          <div id="candidates" class="candidates"></div>
+          <div class="speak-row">
+            <button type="button" id="btn-confirm" class="ghost" disabled>
+              That is correct
+            </button>
+            <button type="button" id="btn-speak" class="primary" disabled>
+              Say it again
+            </button>
+            <button type="button" id="btn-record-phrase" class="ghost" disabled>
+              Record this phrase
+            </button>
+            <button type="button" id="btn-clear" class="ghost">Clear</button>
+          </div>
+          <div class="log-block">
+            <div class="log-head">
+              <h2 id="log-title">Conversation</h2>
+              <div class="log-actions">
+                <button type="button" id="btn-copy" class="tiny">Copy</button>
+                <button type="button" id="btn-delete-log" class="tiny">Delete</button>
+              </div>
+            </div>
+            <ol id="log" class="log"></ol>
+          </div>
+        </section>
+      </main>
+
+      <section class="board">
+        <div class="board-head">
+          <h2 id="backup-title">Your phrases</h2>
+          <p id="backup-hint">Only phrases you trained. Tap to speak instantly.</p>
+        </div>
+        <div id="phrase-grid" class="phrase-grid"></div>
+      </section>
+    </div>
+
+    <div id="modal-settings" class="modal hidden" role="dialog" aria-labelledby="settings-title">
+      <div class="sheet">
+        <div class="sheet-scroll">
+          <h2 id="settings-title">Settings</h2>
+          <label class="toggle">
+            <input type="checkbox" id="opt-autospeak" checked />
+            <span id="lbl-autospeak">Speak every reading out loud automatically</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="opt-use-custom" checked />
+            <span id="lbl-use-custom">Use my custom voice</span>
+          </label>
+          <p id="use-custom-hint" class="hint">Turn off to speak predictions with the robotic browser voice instead.</p>
+          <label class="field" id="lbl-strict">
+            Strictness
+            <input type="range" id="opt-sensitivity" min="0.45" max="1.2" step="0.05" value="0.72" />
+          </label>
+          <label class="field" id="lbl-pause">
+            Pause before predicting (ms)
+            <input type="range" id="opt-pause" min="400" max="1400" step="50" value="700" />
+          </label>
+          <label class="field" id="lbl-voice">
+            Voice
+            <select id="opt-voice"></select>
+          </label>
+          <button type="button" class="primary close-modal" data-close="modal-settings" id="btn-settings-done">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-train" class="modal hidden" role="dialog" aria-labelledby="train-title">
+      <div class="sheet wide">
+        <div class="sheet-head">
+          <h2 id="train-title">Train your phrases</h2>
+          <button type="button" class="tiny close-modal" data-close="modal-train" id="btn-train-close">Done</button>
+        </div>
+        <div class="sheet-scroll">
+          <p class="lead" id="train-lead">
+            Training is optional. LipVoice already reads common words from your lips.
+            Train a phrase to improve accuracy for specific words you use often.
+          </p>
+          <section id="pronounce-guide" class="pronounce-guide" aria-label="Visual pronunciation guide">
+            <div class="pg-head">
+              <p id="pg-title" class="pg-title">Watch the mouth first</p>
+              <label class="pg-accent">
+                <span id="pg-accent-lbl">Accent</span>
+                <select id="pg-accent">
+                  <option value="us">US</option>
+                  <option value="uk">UK</option>
+                </select>
+              </label>
+            </div>
+            <div class="pg-stage">
+              <svg id="pg-mouth" viewBox="0 0 260 200" aria-hidden="true">
+                <ellipse class="pg-head" cx="130" cy="102" rx="78" ry="88" />
+                <ellipse class="pg-ear" cx="50" cy="108" rx="12" ry="18" />
+                <ellipse class="pg-ear" cx="210" cy="108" rx="12" ry="18" />
+                <ellipse class="pg-eye" cx="100" cy="82" rx="9" ry="7" />
+                <ellipse class="pg-eye" cx="160" cy="82" rx="9" ry="7" />
+                <circle class="pg-pupil" cx="100" cy="83" r="3.2" />
+                <circle class="pg-pupil" cx="160" cy="83" r="3.2" />
+                <path class="pg-brow" d="M88 68 Q100 62 112 68" />
+                <path class="pg-brow" d="M148 68 Q160 62 172 68" />
+                <path class="pg-nose" d="M130 88 Q136 108 130 116 Q124 108 130 88" />
+                <path id="pg-outer" d="M78 138 C96 118, 164 118, 182 138 C164 158, 96 158, 78 138 Z" />
+                <rect id="pg-teeth" x="104" y="128" width="52" height="10" rx="2" />
+                <path id="pg-inner" d="M108 138 C118 132, 142 132, 152 138 C142 144, 118 144, 108 138 Z" />
+              </svg>
+              <p id="pg-current" class="pg-current"></p>
+            </div>
+            <div id="pg-words" class="pg-words"></div>
+            <div id="pg-phones" class="pg-phones"></div>
+            <div class="pg-bar" aria-hidden="true"><span id="pg-progress"></span></div>
+            <div class="pg-controls">
+              <button type="button" id="pg-play" class="tiny">Play</button>
+              <button type="button" id="pg-pause" class="tiny">Pause</button>
+              <button type="button" id="pg-replay" class="tiny">Replay</button>
+              <button type="button" id="pg-slow" class="tiny">Slow</button>
+            </div>
+            <p id="pg-hint" class="hint">Type a phrase to see how the lips should move, then record.</p>
+          </section>
+          <div class="train-layout">
+            <div>
+              <label class="field" id="lbl-phrase">
+                Phrase to train
+                <input id="train-text" type="text" maxlength="80" placeholder="e.g. I need water" />
+              </label>
+              <div class="bar" aria-label="Training progress">
+                <span id="train-progress"></span>
+              </div>
+              <div id="angle-chips" class="angle-chips" aria-label="Head angles"></div>
+              <p id="train-coach" class="coach"></p>
+              <div class="train-actions">
+                <button type="button" id="btn-record" class="primary">Start recording</button>
+                <p id="train-hint" class="hint">Record front, then turn slightly left and right, then move closer.</p>
+              </div>
+            </div>
+            <ul id="trained-list" class="trained-list"></ul>
+          </div>
+        </div>
+        <div class="sheet-foot">
+          <button type="button" id="btn-essentials" class="ghost">Load essentials</button>
+          <button type="button" class="primary close-modal" data-close="modal-train" id="btn-train-done">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-voice" class="modal hidden" role="dialog" aria-labelledby="voice-title">
+      <div class="sheet">
+        <div class="sheet-head">
+          <h2 id="voice-title">My voice</h2>
+          <button type="button" class="tiny close-modal" data-close="modal-voice" id="btn-voice-close">Done</button>
+        </div>
+        <div class="sheet-scroll">
+          <p class="lead" id="voice-lead">Upload one old recording of the patient's voice. LipVoice then speaks every predicted phrase in that voice — not a robot, and not a replay of the same words.</p>
+          <div class="voice-mode" role="group" aria-label="Voice mode">
+            <button type="button" id="btn-mode-custom" class="voice-mode-btn active">My voice</button>
+            <button type="button" id="btn-mode-ai" class="voice-mode-btn">AI voice</button>
+          </div>
+          <p id="voice-mode-hint" class="hint">My voice uses your recording. AI voice uses the robotic browser voice.</p>
+          <div class="train-actions">
+            <label class="primary file-btn" id="lbl-voice-upload">
+              Upload my voice
+              <input id="voice-file" type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.webm" hidden />
+            </label>
+            <button type="button" id="btn-voice" class="ghost">Record a sample</button>
+            <button type="button" id="btn-voice-preview" class="ghost" disabled>Hear sample</button>
+          </div>
+          <p id="voice-hint" class="hint"></p>
+          <p id="voice-applied" class="coach"></p>
+          <div class="train-actions">
+            <button type="button" id="btn-voice-hear-original" class="ghost" disabled>Hear original</button>
+            <button type="button" id="btn-voice-hear-clean" class="ghost" disabled>Hear cleaned</button>
+          </div>
+          <p id="voice-quality" class="hint"></p>
+          <label class="field" id="lbl-voice-test">
+            Test text
+            <input id="voice-test-text" type="text" maxlength="120" value="Hello, how are you?" />
+          </label>
+          <button type="button" id="btn-voice-test" class="primary">Speak this text</button>
+          <div class="train-actions">
+            <button type="button" id="btn-voice-hear-generated" class="ghost" disabled>Hear generated WAV</button>
+          </div>
+          <pre id="voice-diag" class="voice-diag"></pre>
+          <ul id="voice-list" class="trained-list"></ul>
+          <details class="tts-box">
+            <summary id="tts-summary">Advanced: remote neural voice (optional)</summary>
+            <p class="hint" id="tts-note">Leave off to use the built-in on-device voice. Turn on to send the test/predicted text to a server you own that returns audio in the patient's voice. No key is bundled with this app.</p>
+            <label class="field" id="lbl-tts-enabled"><span class="tts-row"><input type="checkbox" id="opt-tts-enabled" /> Enable remote voice</span></label>
+            <label class="field" id="lbl-tts-url">Endpoint URL<input id="opt-tts-url" type="url" placeholder="https://your-server.example/tts" /></label>
+            <label class="field" id="lbl-tts-key">API key (optional)<input id="opt-tts-key" type="password" placeholder="stored only on this device" /></label>
+            <label class="field" id="lbl-tts-voice">Voice id (optional)<input id="opt-tts-voice" type="text" placeholder="speaker / voice id" /></label>
+            <div class="train-actions">
+              <button type="button" id="btn-tts-save" class="primary">Save</button>
+              <button type="button" id="btn-tts-test" class="ghost">Test voice</button>
+            </div>
+          </details>
+        </div>
+        <div class="sheet-foot">
+          <button type="button" class="primary close-modal" data-close="modal-voice" id="btn-voice-done">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-cloud" class="modal hidden" role="dialog" aria-labelledby="cloud-title">
+      <div class="sheet">
+        <div class="sheet-head">
+          <h2 id="cloud-title">Account &amp; cloud</h2>
+          <button type="button" class="tiny close-modal" data-close="modal-cloud" id="btn-cloud-close">Close</button>
+        </div>
+        <div class="sheet-scroll">
+          <p id="cloud-offline" class="hint hidden">Cloud sync is not configured on this build. LipVoice keeps everything on this device.</p>
+
+          <section id="cloud-auth" class="cloud-section">
+            <div class="auth-tabs" role="group" aria-label="Account mode">
+              <button type="button" id="auth-tab-login" class="voice-mode-btn active">Sign in</button>
+              <button type="button" id="auth-tab-register" class="voice-mode-btn">Create account</button>
+            </div>
+            <label class="field" id="lbl-auth-name" hidden>
+              Display name
+              <input id="auth-name" type="text" autocomplete="name" maxlength="60" />
+            </label>
+            <label class="field">
+              Email
+              <input id="auth-email" type="email" autocomplete="email" />
+            </label>
+            <label class="field">
+              Password
+              <input id="auth-password" type="password" autocomplete="current-password" />
+            </label>
+            <div class="train-actions">
+              <button type="button" id="btn-auth-submit" class="primary">Sign in</button>
+              <button type="button" id="btn-auth-reset" class="ghost">Forgot password</button>
+            </div>
+            <p id="auth-msg" class="hint" role="status"></p>
+          </section>
+
+          <section id="cloud-account" class="cloud-section hidden">
+            <p id="account-who" class="coach"></p>
+            <p id="sync-status" class="hint"></p>
+            <div class="train-actions">
+              <button type="button" id="btn-sync-now" class="ghost">Sync now</button>
+              <button type="button" id="btn-open-shared" class="ghost">Shared training</button>
+              <button type="button" id="btn-signout" class="ghost">Sign out</button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-shared" class="modal hidden" role="dialog" aria-labelledby="shared-title">
+      <div class="sheet wide">
+        <div class="sheet-head">
+          <h2 id="shared-title">Shared training</h2>
+          <button type="button" class="tiny close-modal" data-close="modal-shared" id="btn-shared-close">Close</button>
+        </div>
+        <div class="sheet-scroll">
+          <p class="lead" id="shared-lead">
+            Shared phrases are contributed by other users and approved by a moderator. Turn on only the
+            phrases you want added to your own recognition, alongside your private personal training.
+          </p>
+          <div class="shared-block">
+            <h3 id="shared-mine-title">Contribute my phrases</h3>
+            <p class="hint" id="shared-mine-hint">Choose one of your personal phrases to offer to the shared dataset. A moderator must approve it before others can use it.</p>
+            <ul id="shared-mine-list" class="trained-list"></ul>
+          </div>
+          <div class="shared-block">
+            <h3 id="shared-available-title">Available shared phrases</h3>
+            <ul id="shared-available-list" class="trained-list"></ul>
+          </div>
+          <div id="shared-mod-block" class="shared-block hidden">
+            <h3 id="shared-mod-title">Moderation queue</h3>
+            <ul id="shared-mod-list" class="trained-list"></ul>
+          </div>
+          <p id="shared-msg" class="hint" role="status"></p>
+        </div>
+      </div>
+    </div>
+
+    <div id="gate" class="gate hidden">
+      <div class="gate-card">
+        <img class="brand-mark lg" src="/icons/icon-192.png" alt="" width="58" height="58" />
+        <h2 id="gate-title">Find your voice again</h2>
+        <p id="gate-body">
+          LipVoice watches your mouth through the camera and turns your lip
+          movements into words, then speaks them out loud for you.
+        </p>
+        <ul class="steps">
+          <li id="step1">Fit your whole face in the frame, mouth clearly visible</li>
+          <li id="step2">Mouth one word or short phrase, then pause</li>
+          <li id="step3">The guess comes from your lips alone - no picking required</li>
+        </ul>
+        <button type="button" id="btn-start" class="primary lg">Turn on camera</button>
+        <p class="fine" id="gate-fine">Video stays on this device. Nothing is uploaded.</p>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

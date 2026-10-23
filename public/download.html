@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Download LipVoice logo</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #0f1c24;
+        color: #f4efe4;
+        font-family: "Source Sans 3", "Segoe UI", sans-serif;
+      }
+      .card {
+        width: min(440px, 92vw);
+        padding: 28px;
+        border-radius: 22px;
+        background: #1c3a45;
+        text-align: center;
+      }
+      img {
+        width: 96px;
+        height: 96px;
+        border-radius: 24px;
+      }
+      a {
+        display: inline-block;
+        margin: 8px 6px 0;
+        padding: 12px 18px;
+        border-radius: 999px;
+        background: #e8a87c;
+        color: #0f1c24;
+        font-weight: 700;
+        text-decoration: none;
+      }
+      p { color: #b7c4c0; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <img src="/icons/icon-192.png" alt="LipVoice mark" />
+      <h1>LipVoice logo</h1>
+      <p>The zip download should start now. If it does not, use a button below.</p>
+      <a id="zip" href="/download/LipVoice_Logo.zip" download="LipVoice_Logo.zip">Download ZIP</a>
+      <a href="/logo.png" download="LipVoice_logo.png">PNG wordmark</a>
+      <a href="/logo.svg" download="LipVoice_logo.svg">SVG wordmark</a>
+      <a href="/icons/icon-512.png" download="LipVoice_icon_512.png">512 PNG</a>
+    </div>
+    <script>
+      const a = document.getElementById("zip");
+      a.click();
+    </script>
+  </body>
+</html>

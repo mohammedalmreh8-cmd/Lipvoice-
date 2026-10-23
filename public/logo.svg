@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 420" role="img" aria-label="LipVoice">
+  <defs>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e8a87c"/>
+      <stop offset="0.55" stop-color="#7ec8c0"/>
+      <stop offset="1" stop-color="#d97b6f"/>
+    </linearGradient>
+    <linearGradient id="lip" x1="0.15" y1="0.1" x2="0.85" y2="0.95">
+      <stop offset="0" stop-color="#f3c09a"/>
+      <stop offset="1" stop-color="#e08b62"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="55%">
+      <stop offset="0" stop-color="#7ec8c0" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#0f1c24" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1280" height="420" rx="48" fill="#0f1c24"/>
+  <g transform="translate(48,48)">
+    <rect width="324" height="324" rx="72" fill="#0f1c24"/>
+    <circle cx="162" cy="156" r="124" fill="url(#glow)"/>
+    <circle cx="162" cy="156" r="112" fill="none" stroke="url(#ring)" stroke-width="10"/>
+    <path fill="url(#lip)" transform="translate(162,156) scale(0.63) translate(-256,-248)"
+          d="M148 248 C168 198 214 176 256 176 C298 176 344 198 364 248 C344 304 298 328 256 328 C214 328 168 304 148 248 Z"/>
+    <path fill="#c45d55" transform="translate(162,156) scale(0.63) translate(-256,-248)"
+          d="M186 248 C204 232 228 224 256 224 C284 224 308 232 326 248 C308 268 284 276 256 276 C228 276 204 268 186 248 Z"/>
+    <ellipse cx="162" cy="157" rx="18" ry="6" fill="#0f1c24"/>
+    <path fill="none" stroke="#7ec8c0" stroke-width="8" stroke-linecap="round"
+          d="M248 134 A50 50 0 0 1 248 178"/>
+    <path fill="none" stroke="#7ec8c0" stroke-width="6" stroke-linecap="round" opacity="0.72"
+          d="M268 122 A68 68 0 0 1 268 190"/>
+    <path fill="none" stroke="#7ec8c0" stroke-width="5" stroke-linecap="round" opacity="0.42"
+          d="M286 112 A86 86 0 0 1 286 200"/>
+  </g>
+  <text x="420" y="188" fill="#f4efe4" font-family="Georgia, 'Times New Roman', serif" font-size="92" font-weight="700" letter-spacing="-1.5">LipVoice</text>
+  <text x="424" y="248" fill="#7ec8c0" font-family="'Source Sans 3', 'Segoe UI', sans-serif" font-size="28" font-weight="600" letter-spacing="3.2">SILENT SPEECH INTERFACE</text>
+  <rect x="424" y="278" width="72" height="4" rx="2" fill="#e8a87c"/>
+  <text x="424" y="328" fill="#b7c4c0" font-family="'Source Sans 3', 'Segoe UI', sans-serif" font-size="22">Camera visemes to speaker-conditioned voice</text>
+</svg>
