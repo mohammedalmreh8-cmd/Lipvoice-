@@ -39,6 +39,16 @@ const ARTIC = {
   AW: { open: 0.48, round: 0.42, spread: 0.16, close: 0.1, press: 0.06, jaw: 0.44, viseme: "AH" },
   OY: { open: 0.34, round: 0.7, spread: 0.18, close: 0.16, press: 0.08, jaw: 0.3, viseme: "OH" },
   EY: { open: 0.3, round: 0.08, spread: 0.58, close: 0.14, press: 0.06, jaw: 0.24, viseme: "EH" },
+  AIN: { open: 0.42, round: 0.18, spread: 0.12, close: 0.16, press: 0.08, jaw: 0.38, viseme: "AH" },
+  HHAR: { open: 0.36, round: 0.1, spread: 0.16, close: 0.1, press: 0.06, jaw: 0.32, viseme: "AH" },
+  X: { open: 0.28, round: 0.22, spread: 0.14, close: 0.2, press: 0.12, jaw: 0.24, viseme: "EH" },
+  GH: { open: 0.3, round: 0.2, spread: 0.14, close: 0.18, press: 0.1, jaw: 0.26, viseme: "UH" },
+  Q: { open: 0.26, round: 0.16, spread: 0.12, close: 0.28, press: 0.14, jaw: 0.22, viseme: "UH" },
+  SPH: { open: 0.16, round: 0.12, spread: 0.36, close: 0.34, press: 0.3, jaw: 0.12, viseme: "EE" },
+  TPH: { open: 0.18, round: 0.14, spread: 0.18, close: 0.36, press: 0.24, jaw: 0.14, viseme: "EH" },
+  DPH: { open: 0.22, round: 0.14, spread: 0.16, close: 0.28, press: 0.18, jaw: 0.18, viseme: "EH" },
+  DHPH: { open: 0.22, round: 0.12, spread: 0.22, close: 0.26, press: 0.28, jaw: 0.16, viseme: "EH" },
+  HAMZA: { open: 0.2, round: 0.08, spread: 0.14, close: 0.4, press: 0.2, jaw: 0.12, viseme: "AH" },
 };
 
 const DIPHTHONGS = {
@@ -56,6 +66,7 @@ const PHONE_MS = {
   CH: 120, JH: 120, K: 80, G: 80, NG: 120, H: 90, R: 120, W: 110, Y: 90,
   IY: 150, IH: 110, EH: 130, AE: 140, AA: 160, AH: 100, AO: 150,
   OW: 180, UH: 110, UW: 160, ER: 150, AY: 200, AW: 200, OY: 200, EY: 180,
+  AIN: 160, HHAR: 120, X: 130, GH: 120, Q: 90, SPH: 140, TPH: 90, DPH: 90, DHPH: 110, HAMZA: 70,
 };
 
 const LEX_US = {
@@ -88,11 +99,108 @@ const LEX_UK = {
 };
 
 const AR_PHONE = {
-  ا: "AA", أ: "AA", إ: "IH", آ: "AA", ء: "AH", ى: "AA", ئ: "IY", ؤ: "UW",
-  ع: "AH", غ: "G", و: "UW", ي: "IY", ب: "B", م: "M", ف: "F",
-  ه: "H", ة: "AH", ح: "H", خ: "K", ت: "T", ط: "T", د: "D", ض: "D",
-  ن: "N", ل: "L", ر: "R", س: "S", ص: "S", ز: "Z", ش: "SH",
-  ث: "TH", ذ: "DH", ظ: "DH", ك: "K", ق: "K", ج: "JH",
+  ا: "AA", أ: "HAMZA", إ: "IH", آ: "AA", ء: "HAMZA", ى: "AA", ئ: "IY", ؤ: "UW",
+  ع: "AIN", غ: "GH", و: "UW", ي: "IY", ب: "B", م: "M", ف: "F",
+  ه: "H", ة: "AH", ح: "HHAR", خ: "X", ت: "T", ط: "TPH", د: "D", ض: "DPH",
+  ن: "N", ل: "L", ر: "R", س: "S", ص: "SPH", ز: "Z", ش: "SH",
+  ث: "TH", ذ: "DH", ظ: "DHPH", ك: "K", ق: "Q", ج: "JH",
+};
+
+const AR_SHORT = { "َ": "AH", "ِ": "IH", "ُ": "UH" };
+const AR_LONG = { "ً": "AH N", "ٍ": "IH N", "ٌ": "UH N" };
+const AR_SKIP = "ْـٰۣ۟۠ۡۢۤۥۦۧۨ۩۪ۭ۫۬";
+
+const LEX_AR = {
+  نعم: "N AH AIN AH M",
+  لا: "L AA",
+  مساعدة: "M UH S AA AIN AH D AH",
+  ماء: "M AA HAMZA",
+  طعام: "TPH AH AIN AA M",
+  حمام: "HHAR AH M AA M",
+  ألم: "HAMZA AH L AH M",
+  شكرا: "SH UH K R AH N",
+  مرحبا: "M AH R HHAR AH B AH N",
+  توقف: "T AH W AH Q AH F",
+  "من فضلك": "M IH N F AH DPH L IH K",
+  فضلك: "F AH DPH L IH K",
+  أحبك: "UH HHAR IH B UH K",
+  تعبان: "T AH AIN B AA N",
+  طبيب: "TPH AH B IY B",
+  المزيد: "AH L M AH Z IY D",
+  حسنا: "HHAR AH S AH N AH N",
+  جوعان: "JH UW AIN AA N",
+  عطشان: "AIN AH TPH SH AA N",
+  بارد: "B AA R IH D",
+  حار: "HHAR AA R",
+  دواء: "D AH W AA HAMZA",
+  بيت: "B AY T",
+  عائلة: "AA IH L AH",
+  أم: "UH M",
+  أب: "AH B",
+  صديق: "SPH AH D IY Q",
+  جيد: "JH AY IH D",
+  سيء: "S AY HAMZA",
+  حب: "HHAR UH B",
+  آسف: "AA S IH F",
+  انتظار: "IH N T IH ZH AA R",
+  تعال: "T AH AIN AA L",
+  اذهب: "IH DH AH B",
+  أحتاج: "AH HHAR T AA JH",
+  أريد: "UH R IY D",
+  أنا: "AH N AA",
+  أنت: "AH N T",
+  هذا: "H AA DH AA",
+  هنا: "H UH N AA",
+  هناك: "H UH N AA K",
+  أين: "AY N",
+  ماذا: "M AA DH AA",
+  متى: "M AH T AA",
+  من: "M AH N",
+  لماذا: "L IH M AA DH AA",
+  كيف: "K AY F",
+  حالك: "HHAR AA L UH K",
+  الآن: "AH L AA N",
+  لاحقا: "L AA HHAR IH Q AH N",
+  اليوم: "AH L Y AW M",
+  غدا: "GH AH D AH N",
+  ليل: "L AY L",
+  نهار: "N AH HHAR AA R",
+  صباح: "SPH AH B AA HHAR",
+  نوم: "N AW M",
+  راحة: "R AA HHAR AH",
+  سعيد: "S AH AIN IY D",
+  حزين: "HHAR AH Z IY N",
+  خائف: "X AA IH F",
+  أفضل: "AH F DPH AH L",
+  افتح: "IH F T AH HHAR",
+  أغلق: "AH GH L IH Q",
+  فوق: "F AW Q",
+  تحت: "T AH HHAR T",
+  يمين: "Y AH M IY N",
+  يسار: "Y AH S AA R",
+  اتصل: "IH T SPH IH L",
+  هاتف: "H AA T IH F",
+  رسالة: "R IH S AA L AH",
+  قل: "Q UH L",
+  اسمع: "IH S M AH AIN",
+  انظر: "UH N DH UH R",
+  اشرب: "IH SH R AH B",
+  كل: "K UH L",
+  اقرأ: "IH Q R AH HAMZA",
+  سرير: "S AH R IY R",
+  كرسي: "K UH R S IY",
+  باب: "B AA B",
+  نافذة: "N AA F IH DH AH",
+  غرفة: "GH UH R F AH",
+  سيارة: "S AY AA R AH",
+  ضوء: "DPH AW HAMZA",
+  ظلام: "DHPH AH L AA M",
+  تذكر: "T AH DH AH K AH R",
+  ساعدني: "S AA AIN IH D N IY",
+  "أريد ماء": "UH R IY D M AA HAMZA",
+  "أحتاج مساعدة": "AH HHAR T AA JH M UH S AA AIN AH D AH",
+  "كيف حالك": "K AY F HHAR AA L UH K",
+  "مرحبا كيف حالك": "M AH R HHAR AH B AH N K AY F HHAR AA L UH K",
 };
 
 function clamp(v, a = 0, b = 1) {
@@ -150,9 +258,43 @@ function letterPhones(word) {
   return out.filter(Boolean);
 }
 
+function foldArabic(word) {
+  return String(word || "")
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function arabicPhones(word) {
   const out = [];
-  for (const ch of word) {
+  const chars = Array.from(String(word || ""));
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i];
+    if (AR_SKIP.includes(ch)) continue;
+    if (AR_LONG[ch]) {
+      AR_LONG[ch].split(" ").forEach((p) => out.push(p));
+      continue;
+    }
+    if (AR_SHORT[ch]) {
+      out.push(AR_SHORT[ch]);
+      continue;
+    }
+    const next = chars[i + 1];
+    if (ch === "و" && next && !AR_PHONE[next] && !AR_SHORT[next] && !AR_LONG[next]) {
+      out.push("UW");
+      continue;
+    }
+    if (ch === "ي" && next && AR_PHONE[next]) {
+      out.push("IY");
+      continue;
+    }
+    if (ch === "ا" && out.length && ["AH", "HAMZA"].includes(out[out.length - 1])) {
+      out[out.length - 1] = "AA";
+      continue;
+    }
     const p = AR_PHONE[ch];
     if (p) out.push(p);
   }
@@ -160,7 +302,14 @@ function arabicPhones(word) {
 }
 
 export function phonesForWord(word, lang, accent) {
-  if (lang === "ar") return arabicPhones(word);
+  if (lang === "ar") {
+    const raw = String(word || "").trim();
+    if (LEX_AR[raw]) return LEX_AR[raw].split(" ").filter(Boolean);
+    const folded = foldArabic(raw);
+    const hit = Object.keys(LEX_AR).find((k) => foldArabic(k) === folded);
+    if (hit) return LEX_AR[hit].split(" ").filter(Boolean);
+    return arabicPhones(raw);
+  }
   const lex = accent === "uk" ? LEX_UK : LEX_US;
   const key = word.toLowerCase();
   if (lex[key]) return lex[key].split(" ");

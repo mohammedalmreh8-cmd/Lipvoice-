@@ -778,16 +778,16 @@ const LETTER_VISEME = {
 };
 
 const ARABIC_VISEME = {
-  ا: "AH", أ: "AH", إ: "AH", آ: "AH", ء: "AH", ى: "AH", ئ: "AH", ؤ: "AH",
-  ع: "AH", غ: "AH",
+  ا: "AH", أ: "AH", إ: "EH", آ: "AH", ء: "AH", ى: "AH", ئ: "EE", ؤ: "OO/W",
+  ع: "AH", غ: "UH",
   و: "OO/W",
   ي: "EE",
   ب: "M/B/P", م: "M/B/P",
   ف: "F/V",
-  ه: "EH", ة: "EH", ح: "EH", خ: "EH",
+  ه: "AH", ة: "AH", ح: "AH", خ: "EH",
   ت: "EH", ط: "EH", د: "EH", ض: "EH", ن: "EH", ل: "EH", ر: "EH",
   س: "EE", ص: "EE", ز: "EE", ش: "EH", ث: "EH", ذ: "EH", ظ: "EH",
-  ك: "EH", ق: "EH", ج: "EH",
+  ك: "EH", ق: "UH", ج: "EH",
 };
 
 export function wordToVisemes(word, lang = "en") {

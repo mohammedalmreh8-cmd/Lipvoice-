@@ -25,10 +25,10 @@ export function saveTTSSettings(partial) {
 export function getUseCustomVoice() {
   try {
     const v = localStorage.getItem(USE_CUSTOM_KEY);
-    if (v === null) return true;
+    if (v === null) return false;
     return v !== "0";
   } catch {
-    return true;
+    return false;
   }
 }
 

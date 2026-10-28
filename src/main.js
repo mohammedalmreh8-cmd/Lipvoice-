@@ -34,7 +34,7 @@ import {
   setUseCustomVoice,
 } from "./voices.js";
 import { buildDonor } from "./clone.js";
-import { generateSpeech, testRemote, remoteReady } from "./tts.js";
+import { generateSpeech, testRemote, remoteReady, fetchArabicNeural, arabicTtsUrl } from "./tts.js";
 import { decodeToMono, samplesToBuffer, encodeWav } from "./audio.js";
 import * as cloud from "./cloud.js";
 
@@ -102,6 +102,7 @@ const useCustomEl = document.getElementById("opt-use-custom");
 const modeCustomBtn = document.getElementById("btn-mode-custom");
 const modeAiBtn = document.getElementById("btn-mode-ai");
 const voiceModeHint = document.getElementById("voice-mode-hint");
+const arAiBtn = document.getElementById("btn-ar-ai");
 const voiceHearGeneratedBtn = document.getElementById("btn-voice-hear-generated");
 const voiceDiagEl = document.getElementById("voice-diag");
 let voiceProfiles = [];
@@ -556,9 +557,15 @@ function stopVoicePlayback() {
     voiceNode = null;
   }
   if (voicePlayback) {
-    voicePlayback.pause();
-    voicePlayback.removeAttribute("src");
-    voicePlayback.load();
+    try {
+      voicePlayback.pause();
+    } catch {
+      /* already paused */
+    }
+    if (voicePlayback !== arabicPlayer) {
+      voicePlayback.removeAttribute("src");
+      voicePlayback.load();
+    }
     voicePlayback = null;
   }
   window.speechSynthesis.cancel();
@@ -582,6 +589,18 @@ async function unlockAudio() {
 
 document.addEventListener("pointerdown", () => {
   unlockAudio().catch(() => {});
+  const player = ensureArabicPlayer();
+  if (!player.dataset.unlocked) {
+    player.src = arabicTtsUrl("نعم");
+    player.muted = true;
+    player.play().then(() => {
+      player.pause();
+      player.muted = false;
+      player.dataset.unlocked = "1";
+    }).catch(() => {
+      player.muted = false;
+    });
+  }
 }, { passive: true });
 
 function reportVoiceError(err, target) {
@@ -742,19 +761,124 @@ async function speakCloned(phrase) {
   return result.provider;
 }
 
+let arabicPlayer = document.getElementById("arabic-player") || null;
+
+function ensureArabicPlayer() {
+  if (arabicPlayer) return arabicPlayer;
+  arabicPlayer = document.getElementById("arabic-player");
+  if (!arabicPlayer) {
+    arabicPlayer = new Audio();
+    arabicPlayer.id = "arabic-player";
+    arabicPlayer.preload = "auto";
+    arabicPlayer.setAttribute("playsinline", "");
+    document.body.appendChild(arabicPlayer);
+  }
+  arabicPlayer.playsInline = true;
+  arabicPlayer.volume = 1;
+  return arabicPlayer;
+}
+
+function playArabicUrl(phrase) {
+  const audio = ensureArabicPlayer();
+  if (voiceNode) {
+    try {
+      voiceNode.stop();
+    } catch {
+      /* already stopped */
+    }
+    voiceNode.disconnect?.();
+    voiceNode = null;
+  }
+  window.speechSynthesis?.cancel?.();
+  try {
+    audio.pause();
+  } catch {
+    /* already paused */
+  }
+  audio.muted = false;
+  audio.volume = 1;
+  audio.src = arabicTtsUrl(phrase) + "&t=" + Date.now();
+  voicePlayback = audio;
+  const playing = audio.play();
+  return new Promise((resolve, reject) => {
+    const done = (ok, err) => {
+      audio.onended = null;
+      audio.onerror = null;
+      if (ok) resolve("arabic-neural");
+      else reject(err || new Error("play-fail"));
+    };
+    audio.onended = () => done(true);
+    audio.onerror = () => done(false, new Error("play-fail"));
+    if (playing && playing.then) playing.catch((err) => done(false, err));
+  });
+}
+
+async function speakArabicNeural(phrase) {
+  lastProvider = "arabic-neural";
+  showDiag({ engine: "arabic-neural", format: "mp3", text: phrase, ok: true });
+  try {
+    return await playArabicUrl(phrase);
+  } catch {
+    await unlockAudio().catch(() => {});
+    const neural = await fetchArabicNeural(phrase, audioCtx);
+    if (neural.buffer && audioCtx?.state === "running") {
+      await playBufferOnce(neural.buffer);
+      return "arabic-neural";
+    }
+    throw new Error("play-fail");
+  }
+}
+
+async function speakOnDevice(phrase) {
+  const ready = await unlockAudio().catch(() => false);
+  if (store.lang === "ar") return speakArabicNeural(phrase);
+  if (!ready || !audioCtx) throw new Error("locked");
+  const result = await generateSpeech({
+    text: phrase,
+    lang: store.lang,
+    ctx: audioCtx,
+    donor: null,
+    allowRemote: false,
+  });
+  lastProvider = result.provider || "ondevice";
+  if (result.samples && result.sr) lastWavBlob = encodeWav(result.samples, result.sr);
+  else lastWavBlob = null;
+  showDiag({ ...(result.diag || {}), engine: result.diag?.engine || lastProvider, ok: true });
+  if (voiceHearGeneratedBtn) voiceHearGeneratedBtn.disabled = !lastWavBlob;
+  await playBufferOnce(result.buffer);
+  return lastProvider;
+}
+
+function isArabicVoice(voice) {
+  return !!(voice && arabicVoiceScore(voice) > 0);
+}
+
+function pickRobotVoice() {
+  const voices = speechSynthesis.getVoices() || [];
+  const chosen = voiceSelect?.value;
+  if (chosen) {
+    const match = voices.find((v) => v.name === chosen);
+    if (match && (store.lang !== "ar" || isArabicVoice(match))) return match;
+  }
+  const langVoices = voicesForLang();
+  return langVoices[0] || null;
+}
+
 function speakRobot(phrase) {
   return new Promise((resolve, reject) => {
+    if (store.lang === "ar") {
+      speakOnDevice(phrase).then(resolve).catch(reject);
+      return;
+    }
     if (!window.speechSynthesis) {
       reject(new Error("no-audio"));
       return;
     }
     stopVoicePlayback();
+    const voice = pickRobotVoice();
     const u = new SpeechSynthesisUtterance(phrase);
-    u.lang = t().speakLang;
-    const chosen = voiceSelect?.value;
-    const voices = speechSynthesis.getVoices();
-    const match = voices.find((v) => v.name === chosen);
-    if (match) u.voice = match;
+    u.lang = voice?.lang || t().speakLang;
+    if (voice) u.voice = voice;
     u.rate = 0.95;
     u.onend = () => resolve("robot");
     u.onerror = () => reject(new Error("play-fail"));
@@ -767,15 +891,30 @@ async function speak(text) {
   if (!phrase || !isUsablePrediction(phrase)) return;
   const useCustom = getUseCustomVoice();
   try {
+    if (store.lang === "ar" && !useCustom) {
+      const provider = await speakArabicNeural(phrase);
+      setStatus("live", t().voicePlayingOnDevice);
+      lastProvider = provider;
+      return;
+    }
     if (!useCustom) {
       lastProvider = "robot";
-      await speakRobot(phrase);
+      const provider = await speakRobot(phrase);
       setStatus("live", t().voicePlayingRobot);
       return;
     }
     const provider = await speakCloned(phrase);
     setStatus("live", provider === "remote" ? t().voicePlayingRemote : t().voicePlaying);
   } catch (err) {
+    if (store.lang === "ar") {
+      try {
+        await speakArabicNeural(phrase);
+        setStatus("live", t().voicePlayingOnDevice);
+        return;
+      } catch {
+        /* fall through */
+      }
+    }
     reportVoiceError(err, false);
   }
 }
@@ -789,8 +928,8 @@ function setVoiceButtons() {
   const ui = t();
   if (voiceBtn) voiceBtn.textContent = voiceRecorder ? ui.stopVoice : ui.recordVoice;
   const hasVoice = !!(pendingVoice || getAppliedId() || voiceProfiles.length);
-  if (voicePreviewBtn) voicePreviewBtn.disabled = !hasVoice && getUseCustomVoice();
-  if (voiceTestBtn) voiceTestBtn.disabled = !hasVoice && getUseCustomVoice();
+  if (voicePreviewBtn) voicePreviewBtn.disabled = store.lang === "ar" ? false : (!hasVoice && getUseCustomVoice());
+  if (voiceTestBtn) voiceTestBtn.disabled = store.lang === "ar" ? false : (!hasVoice && getUseCustomVoice());
   if (voiceHearOriginalBtn) voiceHearOriginalBtn.disabled = !hasVoice;
   if (voiceHearCleanBtn) voiceHearCleanBtn.disabled = !hasVoice;
   if (voiceHearGeneratedBtn) voiceHearGeneratedBtn.disabled = !lastWavBlob;
@@ -856,6 +995,11 @@ function applyVoiceMode(useCustom) {
   syncVoiceModeUi();
   setVoiceButtons();
   if (voiceHint) voiceHint.textContent = useCustom ? t().modeHintCustom : t().modeHintAi;
+  if (!useCustom && store.lang === "ar") {
+    speakArabicNeural(testPhrase())
+      .then(() => setStatus("live", t().voicePlayingOnDevice))
+      .catch(() => {});
+  }
 }
 
 function updateVoiceHint() {
@@ -907,7 +1051,8 @@ function renderVoiceList() {
       await refreshVoiceProfiles();
       const demo = testPhrase();
       try {
-        await speakCloned(demo);
+        if (store.lang === "ar" && !getUseCustomVoice()) await speakArabicNeural(demo);
+        else await speakCloned(demo);
       } catch (err) {
         reportVoiceError(err);
       }
@@ -923,7 +1068,8 @@ function renderVoiceList() {
       await refreshVoiceProfiles();
       try {
         await ensureDonor();
-        await speakCloned(testPhrase());
+        if (store.lang === "ar" && !getUseCustomVoice()) await speakArabicNeural(testPhrase());
+        else await speakCloned(testPhrase());
         if (voiceHint) voiceHint.textContent = ui.voiceSaved;
       } catch (err) {
         reportVoiceError(err);
@@ -977,7 +1123,8 @@ async function adoptVoice(blob) {
   showQuality();
   setVoiceButtons();
   try {
-    await speakCloned(testPhrase());
+    if (store.lang === "ar" && !getUseCustomVoice()) await speakArabicNeural(testPhrase());
+    else await speakCloned(testPhrase());
   } catch (err) {
     reportVoiceError(err);
   }
@@ -1028,19 +1175,60 @@ function stopVoiceCapture() {
   if (voiceRecorder && voiceRecorder.state !== "inactive") voiceRecorder.stop();
 }
 
+function arabicVoiceScore(voice) {
+  const lang = String(voice.lang || "").toLowerCase();
+  const name = String(voice.name || "").toLowerCase();
+  if (lang.startsWith("ar")) {
+    if (lang.includes("sa") || name.includes("saudi") || name.includes("naayf") || name.includes("hoda") || name.includes("maged")) return 5;
+    if (lang.includes("eg") || name.includes("egypt")) return 4;
+    return 3;
+  }
+  if (name.includes("arabic") || name.includes("عربي") || name.includes("arab")) return 2;
+  return 0;
+}
+
+function voicesForLang() {
+  const voices = window.speechSynthesis?.getVoices?.() || [];
+  const prefix = t().voicePrefix;
+  if (prefix === "ar") {
+    const scored = voices
+      .map((v) => ({ v, s: arabicVoiceScore(v) }))
+      .filter((x) => x.s > 0)
+      .sort((a, b) => b.s - a.s);
+    return scored.map((x) => x.v);
+  }
+  return voices.filter((v) => v.lang && v.lang.toLowerCase().startsWith(prefix));
+}
+
 function fillVoices() {
   if (!voiceSelect || !window.speechSynthesis) return;
-  const voices = speechSynthesis.getVoices();
-  const prefix = t().voicePrefix;
-  const matched = voices.filter((v) => v.lang && v.lang.toLowerCase().startsWith(prefix));
-  const list = matched.length ? matched : voices;
+  const matched = voicesForLang();
+  const prev = voiceSelect.value;
   voiceSelect.innerHTML = "";
+  if (store.lang === "ar") {
+    const onDevice = document.createElement("option");
+    onDevice.value = "";
+    onDevice.textContent = t().voiceOnDeviceAr || "Arabic AI voice";
+    voiceSelect.appendChild(onDevice);
+    matched.forEach((v) => {
+      const opt = document.createElement("option");
+      opt.value = v.name;
+      opt.textContent = `${v.name} (${v.lang})`;
+      voiceSelect.appendChild(opt);
+    });
+    if (prev && [...voiceSelect.options].some((o) => o.value === prev)) voiceSelect.value = prev;
+    else voiceSelect.value = "";
+    return;
+  }
+  const voices = speechSynthesis.getVoices();
+  const list = matched.length ? matched : voices;
   list.forEach((v) => {
     const opt = document.createElement("option");
     opt.value = v.name;
     opt.textContent = `${v.name} (${v.lang})`;
     voiceSelect.appendChild(opt);
   });
+  if (prev && [...voiceSelect.options].some((o) => o.value === prev)) voiceSelect.value = prev;
 }
 
 speechSynthesis.addEventListener("voiceschanged", fillVoices);
@@ -1426,6 +1614,12 @@ document.getElementById("btn-speak").addEventListener("click", () => {
   if (!currentText) return;
   speak(currentText).catch(() => {});
 });
+arAiBtn?.addEventListener("click", () => {
+  const phrase = currentText || testPhrase() || (store.lang === "ar" ? "مرحبا كيف حالك" : "مرحبا");
+  speakArabicNeural(phrase)
+    .then(() => setStatus("live", t().voicePlayingOnDevice))
+    .catch((err) => reportVoiceError(err, false));
+});
 document.getElementById("btn-clear").addEventListener("click", () => {
   currentText = "";
   lastUtterance = null;
@@ -1535,9 +1729,14 @@ document.getElementById("btn-record-phrase")?.addEventListener("click", () => {
 
 async function speakTestPhrase() {
   const phrase = testPhrase();
+  if (store.lang === "ar") {
+    lastProvider = await speakArabicNeural(phrase);
+    if (voiceHint) voiceHint.textContent = t().voicePlayingOnDevice;
+    return;
+  }
   if (!getUseCustomVoice()) {
-    lastProvider = "robot";
-    await speakRobot(phrase);
+    const provider = await speakRobot(phrase);
+    lastProvider = provider;
     if (voiceHint) voiceHint.textContent = t().voicePlayingRobot;
     return;
   }
@@ -1661,6 +1860,7 @@ function applyLanguage() {
     ["kicker", ui.kicker],
     ["btn-confirm", ui.confirm],
     ["btn-speak", ui.sayAgain],
+    ["btn-ar-ai", ui.hearArabicAi],
     ["btn-record-phrase", voiceRecorder ? ui.stopVoice : ui.recordThisPhrase],
     ["btn-clear", ui.clear],
     ["log-title", ui.conversation],
@@ -1743,6 +1943,7 @@ function applyLanguage() {
 function switchLang(lang) {
   if (store.lang === lang) return;
   store.lang = lang;
+  if (lang === "ar") setUseCustomVoice(false);
   saveStore(store);
   lastUtterance = null;
   currentText = "";

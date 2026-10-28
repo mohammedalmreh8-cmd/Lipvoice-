@@ -34,6 +34,15 @@ const PH = {
   HH: { f: [500, 1500, 2500, 3500], b: [80, 120, 180, 250], av: 0.08, af: 0, ah: 0.7, ms: 80 },
   CH: { f: [350, 1800, 2500, 3500], b: [70, 120, 160, 220], av: 0, af: 0.8, ah: 0, fn: 3200, bn: 1200, ms: 50 },
   JH: { f: [350, 1800, 2500, 3500], b: [70, 120, 160, 220], av: 0.35, af: 0.55, ah: 0, fn: 3200, bn: 1200, ms: 50 },
+  AIN: { f: [680, 1050, 2350, 3300], b: [90, 110, 160, 220], av: 0.95, af: 0.12, ah: 0.18, ms: 160 },
+  HHAR: { f: [520, 1480, 2400, 3400], b: [90, 140, 180, 240], av: 0.12, af: 0.15, ah: 0.85, ms: 120 },
+  X: { f: [400, 1600, 2300, 3400], b: [80, 140, 180, 240], av: 0, af: 0.78, ah: 0.12, fn: 1800, bn: 1600, ms: 130 },
+  GH: { f: [380, 980, 2200, 3300], b: [80, 120, 160, 220], av: 0.55, af: 0.35, ah: 0.08, fn: 1400, bn: 900, ms: 120 },
+  SPH: { f: [350, 1200, 2400, 3600], b: [70, 120, 180, 240], av: 0, af: 0.82, ah: 0, fn: 4200, bn: 1300, ms: 140 },
+  TPH: { f: [400, 1200, 2300, 3400], b: [70, 110, 160, 220], av: 0, af: 0.2, ah: 0, ms: 80 },
+  DPH: { f: [420, 1180, 2280, 3400], b: [70, 110, 160, 220], av: 0.55, af: 0.12, ah: 0, ms: 80 },
+  DHPH: { f: [420, 1300, 2400, 3400], b: [80, 120, 170, 230], av: 0.45, af: 0.4, ah: 0, fn: 1800, bn: 1600, ms: 110 },
+  HAMZA: { f: [400, 1400, 2500, 3400], b: [80, 120, 180, 220], av: 0.15, af: 0.2, ah: 0.1, ms: 70 },
 };
 
 const STOPS = {
@@ -43,6 +52,10 @@ const STOPS = {
   D: { fn: 3500, voiced: 1, msClose: 40, msBurst: 10 },
   K: { fn: 2200, voiced: 0, msClose: 55, msBurst: 12 },
   G: { fn: 1800, voiced: 1, msClose: 45, msBurst: 10 },
+  Q: { fn: 900, voiced: 0, msClose: 60, msBurst: 14 },
+  HAMZA: { fn: 1600, voiced: 0, msClose: 40, msBurst: 8 },
+  TPH: { fn: 2800, voiced: 0, msClose: 55, msBurst: 12 },
+  DPH: { fn: 2400, voiced: 1, msClose: 45, msBurst: 12 },
 };
 
 function mulberry(seed) {
@@ -217,13 +230,21 @@ function rosenberg(p) {
   return 0;
 }
 
+const DEFAULT_DONOR = { f0: 128, formantScale: 0.98, brightness: 0.32 };
+
+export function defaultDonor(lang = "en") {
+  if (lang === "ar") return { f0: 122, formantScale: 0.94, brightness: 0.28 };
+  return { ...DEFAULT_DONOR };
+}
+
 export function synthesizePhrase(donor, text, lang = "en", sampleRate = 22050) {
   const phones = phonesForText(text, lang).filter(Boolean);
   if (!phones.length) return null;
   const sr = sampleRate;
-  const f0 = Math.max(90, Math.min(280, donor?.f0 || 140));
-  const fs = Math.max(0.88, Math.min(1.16, donor?.formantScale || 1));
-  const bright = Math.max(0.15, Math.min(0.75, donor?.brightness ?? 0.35));
+  const voice = donor || defaultDonor(lang);
+  const f0 = Math.max(90, Math.min(280, voice.f0 || 140));
+  const fs = Math.max(0.88, Math.min(1.16, voice.formantScale || 1));
+  const bright = Math.max(0.15, Math.min(0.75, voice.brightness ?? 0.35));
 
   const segs = [];
   phones.forEach((phone) => {

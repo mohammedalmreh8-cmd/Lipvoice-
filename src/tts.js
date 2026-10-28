@@ -1,4 +1,4 @@
-import { synthesizePhrase } from "./clone.js";
+import { synthesizePhrase, defaultDonor } from "./clone.js";
 import { validateSpeech, samplesToBuffer } from "./audio.js";
 import { getTTSSettings } from "./voices.js";
 
@@ -12,6 +12,36 @@ function base64ToArrayBuffer(b64) {
 
 export function remoteReady(cfg) {
   return !!(cfg && cfg.enabled && cfg.url && cfg.url.trim());
+}
+
+export function arabicTtsUrl(text) {
+  return `/api/ar-tts?q=${encodeURIComponent(String(text || "").trim().slice(0, 180))}`;
+}
+
+export async function fetchArabicNeural(text, ctx) {
+  const phrase = String(text || "").trim();
+  if (!phrase) throw new Error("no-text");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  try {
+    const url = arabicTtsUrl(phrase);
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`arabic-http-${res.status}`);
+    const blob = await res.blob();
+    if (!blob || !blob.size) throw new Error("arabic-empty");
+    let buffer = null;
+    if (ctx) {
+      try {
+        const arr = await blob.arrayBuffer();
+        buffer = await ctx.decodeAudioData(arr.slice(0));
+      } catch {
+        buffer = null;
+      }
+    }
+    return { blob, buffer, url };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function validateAudioBuffer(audio) {
@@ -102,7 +132,31 @@ export async function generateSpeech({ text, lang, ctx, donor, allowRemote = tru
     e.cause = lastError;
     throw e;
   }
-  const synth = synthesizePhrase(donor, text, lang, 22050);
+  if (lang === "ar" && !donor) {
+    const neural = await fetchArabicNeural(text, ctx);
+    if (neural.buffer) {
+      return {
+        buffer: neural.buffer,
+        blob: neural.blob,
+        provider: "arabic-neural",
+        diag: {
+          engine: "arabic-neural",
+          format: "decoded-audio",
+          sampleRate: neural.buffer.sampleRate,
+          channels: neural.buffer.numberOfChannels || 1,
+          duration: neural.buffer.duration,
+          text,
+        },
+      };
+    }
+    return {
+      buffer: null,
+      blob: neural.blob,
+      provider: "arabic-neural",
+      diag: { engine: "arabic-neural", format: "mp3", text },
+    };
+  }
+  const synth = synthesizePhrase(donor || defaultDonor(lang), text, lang, 22050);
   if (!synth) throw new Error("no-text");
   const v = validateSpeech(synth.samples, synth.sr);
   if (!v.ok) throw new Error("synth-" + v.reason);

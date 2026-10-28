@@ -1,4 +1,4 @@
-const CACHE = "lipvoice-v10";
+const CACHE = "lipvoice-v11";
 const PRECACHE = [
   "/manifest.webmanifest",
   "/favicon.png",
@@ -27,6 +27,7 @@ self.addEventListener("activate", (event) => {
 function shouldBypass(url) {
   const path = url.pathname;
   if (path.startsWith("/src/") || path.startsWith("/@") || path.startsWith("/node_modules")) return true;
+  if (path.startsWith("/api/")) return true;
   if (url.searchParams.has("t") || url.searchParams.has("v") || url.searchParams.has("import")) return true;
   return false;
 }
